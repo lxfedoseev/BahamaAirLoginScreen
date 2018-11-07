@@ -31,19 +31,25 @@ func delay(_ seconds: Double, completion: @escaping ()->Void) {
 }
 
 func tintBackgroundColor(layer: CALayer, toColor: UIColor){
-    let bgColor = CABasicAnimation(keyPath: "backgroundColor")
-    bgColor.fromValue = layer.backgroundColor
-    bgColor.toValue = toColor.cgColor
-    bgColor.duration = 1.0
-    layer.add(bgColor, forKey: nil)
+    
+    let tint = CASpringAnimation(keyPath: "backgroundColor")
+    tint.damping = 5.0
+    tint.initialVelocity = -10.0
+    tint.fromValue = layer.backgroundColor
+    tint.toValue = toColor.cgColor
+    tint.duration = tint.settlingDuration
+    layer.add(tint, forKey: nil)
     layer.backgroundColor = toColor.cgColor
 }
 
 func roundCorners(layer: CALayer, toRadius: CGFloat){
-    let corRadius = CABasicAnimation(keyPath: "cornerRadius")
-    corRadius.toValue = toRadius
-    corRadius.duration = 0.33
-    layer.add(corRadius, forKey: nil)
+    
+    let round = CASpringAnimation(keyPath: "cornerRadius")
+    round.damping = 5.0
+    round.fromValue = layer.cornerRadius
+    round.toValue = toRadius
+    round.duration = round.settlingDuration
+    layer.add(round, forKey: nil)
     layer.cornerRadius = toRadius
 }
 
@@ -126,6 +132,7 @@ class ViewController: UIViewController {
     
     heading.layer.add(groupAnimation, forKey: nil)
     
+    groupAnimation.setValue("form", forKey: "name")
     groupAnimation.beginTime = CACurrentMediaTime() + 0.3
     groupAnimation.setValue(username.layer, forKey: "layer")
     username.layer.add(groupAnimation, forKey: nil)
@@ -324,10 +331,11 @@ extension ViewController: CAAnimationDelegate {
         if name == "form" {
             let layer = anim.value(forKey: "layer") as? CALayer
             anim.setValue(nil, forKey: "layer")
-            let pulse = CABasicAnimation(keyPath: "transform.scale")
+            let pulse = CASpringAnimation(keyPath: "transform.scale")
+            pulse.damping = 7.5
             pulse.fromValue = 1.25
             pulse.toValue = 1.0
-            pulse.duration = 0.25
+            pulse.duration = pulse.settlingDuration
             layer?.add(pulse, forKey: nil)
         }
         
@@ -346,8 +354,35 @@ extension ViewController: CAAnimationDelegate {
 extension ViewController: UITextFieldDelegate {
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
-        print(info.layer.animationKeys()!)
+        print(info.layer.animationKeys())
         info.layer.removeAnimation(forKey: "infoappear")
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        guard let text = textField.text else { return }
+        if text.characters.count < 5 {
+            let jump = CASpringAnimation(keyPath: "position.y")
+            jump.initialVelocity = 100.0
+            jump.mass = 10.0
+            jump.stiffness = 1500.0
+            jump.damping = 50.0
+            jump.fromValue = textField.layer.position.y + 1.0
+            jump.toValue = textField.layer.position.y
+            jump.duration = jump.settlingDuration
+            textField.layer.add(jump, forKey: nil)
+            
+            textField.layer.borderWidth = 3.0
+            textField.layer.borderColor = UIColor.clear.cgColor
+            let flash = CASpringAnimation(keyPath: "borderColor")
+            flash.damping = 7.0
+            flash.stiffness = 200.0
+            flash.fromValue = UIColor(red: 1.0, green: 0.27, blue: 0.0, alpha:
+                1.0).cgColor
+            flash.toValue = UIColor.white.cgColor
+            flash.duration = flash.settlingDuration
+            textField.layer.add(flash, forKey: nil)
+        }
+        
     }
     
 }
